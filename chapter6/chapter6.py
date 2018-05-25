@@ -33,7 +33,7 @@ print()
 
 
 ### 003 K-fold cross-validation
-print('### 03') 
+print('### 003') 
 import numpy as np
 from sklearn.cross_validation import StratifiedKFold
 
@@ -104,6 +104,7 @@ plt.show()
 
 
 ### 006 grid search
+print()
 print('### 006')
 from sklearn.grid_search import GridSearchCV
 from sklearn.svm import SVC
@@ -136,4 +137,118 @@ print()
 
 
 
+### 007 nested cross-validation
+print('### 007')
+# nested cross-validation of the SVM
+gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid, scoring='accuracy', cv=10, n_jobs=-1)
+scores = cross_val_score(gs, X, y, scoring='accuracy', cv=5)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
 
+from sklearn.tree import DecisionTreeClassifier
+
+# nested cross-validaton of the decision tree
+gs = GridSearchCV(
+    estimator=DecisionTreeClassifier(random_state=0),
+    param_grid=[{'max_depth': [1, 2, 3, 4, 5, 6, 7, None]}],
+    scoring='accuracy',
+    cv=5)
+scores = cross_val_score(gs, X_train, y_train, scoring='accuracy', cv=5)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+print()
+
+# As we can see here, the nested cross-validation performance of the SVM
+# model (97.8 percent) is notably better than the performance of the decision tree
+# (90.8 percent). Thus, we'd expect that it might be the better choice for classifying
+# new data that comes from the same population as this particular dataset.
+
+
+
+### 008 confusion matrix
+print('### 008')
+from sklearn.metrics import confusion_matrix
+
+pipe_svc.fit(X_train, y_train)
+y_pred = pipe_svc.predict(X_test)
+confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
+print(confmat)
+print()
+
+fig, ax = plt.subplots(figsize=(2.5, 2.5))
+ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+for i in range(confmat.shape[0]):
+    for j in range(confmat.shape[1]):
+        ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+plt.xlabel('predicted label')
+plt.ylabel('true label')
+plt.show()
+
+
+
+### 009 precison and recall
+print('### 009')
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score, f1_score
+
+print('Precision: %.3f' % precision_score(y_true=y_test, y_pred=y_pred))
+print('Recall: %.3f' % recall_score(y_true=y_test, y_pred=y_pred))
+print('F1: %.3f' % f1_score(y_true=y_test, y_pred=y_pred))
+
+# construct an f1 scorer for GridSearch
+from sklearn.metrics import make_scorer
+
+scorer = make_scorer(f1_score, pos_label=1)
+gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid, scoring=scorer, cv=10)
+
+
+
+### 010 receiver operating characteristic
+print('### 010')
+from sklearn.metrics import roc_curve, auc
+from scipy import interp
+
+X_train2 = X_train[:, [4, 14]]
+cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
+fig = plt.figure(figsize=(7, 5))
+mean_tpr = 0.0
+mean_fpr = np.linspace(0, 1, 100)
+all_tpr = []
+
+for i, (train, test) in enumerate(cv):
+    probas = pipe_lr.fit(X_train2[train], y_train[train]).predict_proba(X_train2[test])
+    fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label=1)
+    mean_tpr += interp(mean_fpr, fpr, tpr)
+    mean_tpr[0] = 0.0
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, lw=1, label='ROC fold %d (area = %0.2f)' % (i+1, roc_auc))
+plt.plot([0, 1], [0, 1], linestyle='--', color=(0.6, 0.6, 0.6), label='random guessing')
+mean_tpr /= len(cv)
+mean_tpr[-1] = 1.0
+mean_auc = auc(mean_fpr, mean_tpr)
+plt.plot(mean_fpr, mean_tpr, 'k--', label='mean ROC (area = %0.2f)' % mean_auc, lw=2)
+plt.plot([0, 0, 1], [0, 1, 1], lw=2, linestyle=':', color='black', label='perfect performance')
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('false positive rate')
+plt.ylabel('true positive rate')
+plt.title('Receiver Operator Characteristic')
+plt.legend(loc="lower right")
+plt.show()
+
+# ROC AUC score
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import accuracy_score
+
+pipe_svc = pipe_svc.fit(X_train2, y_train)
+y_pred2 = pipe_svc.predict(X_test[:, [4, 14]])
+print('ROC AUC: %.3f' % roc_auc_score(y_true=y_test, y_score=y_pred2))
+print('Accuracy: %.3f' % accuracy_score(y_true=y_test, y_pred=y_pred2))
+print()
+
+
+
+### 011 scoring metrics for multiclass classification
+pre_scorer = make_scorer(score_func=precision_score, pos_label=1, greater_is_better=True, average='micro')
+
+# Micro-averaging is useful if we want to weight each instance or prediction equally,
+# whereas macro-averaging weights all classes equally to evaluate the overall
+# performance of a classifier with regard to the most frequent class labels.
