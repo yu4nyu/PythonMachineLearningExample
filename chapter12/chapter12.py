@@ -9,6 +9,7 @@ print('Rows: %d, columns: %d' % (X_test.shape[0], X_test.shape[1]))
 
 
 ### 001_version2
+import numpy as np
 # Optionally, we can save the MNIST image data and labels as CSV files to open them
 # in programs that do not support their special byte format. However, we should be
 # aware that the CSV file format will take up substantially more space on your local
@@ -116,16 +117,16 @@ print()
 
 
 ### 004 gradient checking
-nn_check = MLPGradientCheck(n_output=10,
-                            n_features=X_train.shape[1],
-                            n_hidden=10,
-                            l2=0.0,
-                            l1=0.0,
-                            epochs=10,
-                            eta=0.001,
-                            alpha=0.0,
-                            decrease_const=0.0,
-                            minibatches=1,
-                            random_state=1,
-                            gradient_check=True)
+nn_check = NeuralNetMLP(n_output=10,
+                        n_features=X_train.shape[1],
+                        n_hidden=10,
+                        l2=0.0,
+                        l1=0.0,
+                        epochs=10,
+                        eta=0.001,
+                        alpha=0.0,
+                        decrease_const=0.0,
+                        minibatches=1,
+                        random_state=1,
+                        gradient_check=True)
 nn_check.fit(X_train[:5], y_train[:5], print_progress=False)
