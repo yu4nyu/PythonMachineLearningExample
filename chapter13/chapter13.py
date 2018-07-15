@@ -137,3 +137,110 @@ plt.plot(range(X_train.shape[0]),
 plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
+
+
+
+### 006 logistic function
+print('### 006')
+X = np.array([[1, 1.4, 1.5]])
+w = np.array([0.0, 0.2, 0.4])
+
+def net_input(X, w):
+    z = X.dot(w)
+    return z
+
+def logistic(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+def logistic_activation(X, w):
+    z = net_input(X, w)
+    return logistic(z)
+
+print('P(y=1|x) = %.3f' % logistic_activation(X, w)[0])
+
+# W : array, shape = [n_output_units, n_hidden_units+1]
+#           Weight matrix for hidden layer -> output layer.
+# note that first column (A[:][0] = 1) are the bias units
+W = np.array([[1.1, 1.2, 1.3, 0.5],
+              [0.1, 0.2, 0.4, 0.1],
+              [0.2, 0.5, 2.1, 1.9]])
+# A : array, shape = [n_hidden+1, n_samples]
+#           Activation of hidden layer.
+# note that first element (A[0][0] = 1) is the bias unit
+A = np.array([[1.0],
+              [0.1],
+              [0.3],
+              [0.7]])
+# Z : array, shape = [n_output_units, n_samples]
+#           Net input of the output layer.
+Z = W.dot(A)
+y_probas = logistic(Z)
+print('Probabilities:\n', y_probas)
+
+y_class = np.argmax(y_probas, axis=0)
+print('predicted class label: %d' % y_class[0])
+print()
+
+
+
+### 007 estimate probabilities in multi-class classification via the softmax function
+print('### 007')
+
+def softmax(z):
+    return np.exp(z) / np.sum(np.exp(z))
+
+def softmax_activation(X, w):
+    z = net_input(X, w)
+    return softmax(z)
+
+y_probas = softmax(Z)
+print('Probabilities:\n', y_probas)
+print('Probability sum: %d' % y_probas.sum())
+
+y_class = np.argmax(y_probas, axis=0)
+print('predicted class label: %d' % y_class[0])
+print()
+
+
+
+### 008 broad the output spectrum by using a hyperbolic tangent
+import matplotlib.pyplot as plt
+from scipy.special import expit
+
+def tanh(z):
+    e_p = np.exp(z)
+    e_m = np.exp(-z)
+    return (e_p - e_m) / (e_p + e_m)
+
+z = np.arange(-5, 5, 0.005)
+log_act = logistic(z)
+#log_act = expit(z) # the logistic function is available in SciPy's special module
+tanh_act = tanh(z)
+#tanh_act = np.tanh(z) # we can use NumPy's tanh function to achieve the same results
+
+plt.ylim([-1.5, 1.5])
+plt.xlabel('net input $z$')
+plt.ylabel('activation $\phi(z)$')
+plt.axhline(1, color='black', linestyle='--')
+plt.axhline(0.5, color='black', linestyle='--')
+plt.axhline(0, color='black', linestyle='--')
+plt.axhline(-1, color='black', linestyle='--')
+
+plt.plot(z, tanh_act, linewidth=2, color='black', label='tanh')
+plt.plot(z, log_act, linewidth=2, color='lightgreen', label='logistic')
+plt.legend(loc='lower right')
+plt.tight_layout()
+plt.show()
+
+
+
+### 008 keras
+# built on top of Theano. It allows us to utilize our
+# GPU to accelerate neural network training
+print('### 008')
+print('You need to execute the separated script mnist_keras_mlp.py')
+print('Using CPU:')
+print('    python3 mnist_keras_mlp.py')
+print('Using GPU:')
+print('    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python mnist_keras_mlp.py')
+print()
